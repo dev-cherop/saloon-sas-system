@@ -4,7 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from  app.api.routes.business import router as businesses_router
+from  app.api.routes.businesses import router as businesses_router
+from  app.api.routes.customers import router as customers_router
+from app.api.routes.auth import router as auth_router
+
 from app.db import get_db
 
 app = FastAPI(
@@ -17,11 +20,14 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST","PATCH"],
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
 app.include_router(businesses_router)
+app.include_router(customers_router)
+
 
 
 @app.get("/health", tags=["Health"])

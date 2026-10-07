@@ -4,10 +4,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from backend.app.core.config import settings
-from backend.app.db import Base
-from backend.app.models.business import Business, Branch
-from backend.app.models.customer import Customer
+from  app.core.config import settings
+from  app.db import Base
+from  app.models.business import Business, Branch
+from  app.models.customer import Customer
 
 config = context.config
 
