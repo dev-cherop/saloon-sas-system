@@ -106,3 +106,19 @@ def update_customer(
     db.refresh(customer)
 
     return customer
+
+
+
+def delete_customer(
+    db: Session,
+    business_id: uuid.UUID,
+    customer_id: uuid.UUID,
+) -> bool:
+    customer = get_customer(db, business_id, customer_id)
+
+    if customer is None:
+        return False
+
+    db.delete(customer)
+    db.commit()
+    return True

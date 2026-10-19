@@ -26,6 +26,11 @@ DEFAULT_ROLES = {
         "services:create",
         "services:update",
         "reports:read",
+        "expenses:read",
+        "expenses:create",
+        "expenses:update",
+        "payments:read",
+        "payments:create",
     ],
     "RECEPTIONIST": [
         "customers:read",

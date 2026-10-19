@@ -14,4 +14,31 @@ DEFAULT_PERMISSIONS = [
     ("users:manage", "Manage business users and roles"),
 
     ("settings:manage", "Manage business settings"),
+
+
+    ("loyalty:read", "View loyalty balances and history"),
+    ("loyalty:earn", "Award loyalty points"),
+    ("loyalty:redeem", "Redeem loyalty points"),
+    ("loyalty:manage", "Manage loyalty settings"),
+
+
+    ("expenses:read", "View expenses and expense reports"),
+    ("expenses:create", "Record expenses"),
+    ("expenses:update", "Update expenses"),
+    ("expenses:delete", "Delete expenses"),
+
+    ("payments:read", "View payments and collection reports"),
+    ("payments:create", "Record customer payments"),
+
+    ("workers:read", "View workers"),
+    ("workers:create", "Create workers"),
+    ("workers:update", "Update workers"),
+    ("workers:delete", "Delete workers"),
+
+    ("appointments:read", "View appointments"),
+    ("appointments:create", "Create appointments"),
+    ("appointments:update", "Update appointments"),
+    ("appointments:delete", "Delete appointments"),
+        
+
 ]

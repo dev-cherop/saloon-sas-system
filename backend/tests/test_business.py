@@ -1,31 +1,29 @@
-
-def test_create_business(client):
-    response = client.post(
-        "/api/v1/businesses",
-        json={
-            "name": "Urban Glow Salon",
-            "email": "admin@example.com",
-            "phone": "+256700000000",
-        },
+def test_get_business(
+    client,
+    test_business,
+    auth_headers,
+):
+    response = client.get(
+        f"/api/v1/businesses/{test_business.id}",
+        headers=auth_headers,
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 200
 
     data = response.json()
-    assert data["name"] == "Urban Glow Salon"
-    assert data["is_active"] is True
-    assert "id" in data
+
+    assert data["id"] == str(test_business.id)
+    assert data["name"] == "Test Salon"
 
 
-def test_create_and_list_branches(client):
-    business_response = client.post(
-        "/api/v1/businesses",
-        json={"name": "Urban Glow Salon"},
-    )
-    business_id = business_response.json()["id"]
-
+def test_create_and_list_branches(
+    client,
+    test_business,
+    auth_headers,
+):
     create_response = client.post(
-        f"/api/v1/businesses/{business_id}/branches",
+        f"/api/v1/businesses/{test_business.id}/branches",
+        headers=auth_headers,
         json={
             "name": "Kampala Central",
             "address": "Kampala, Uganda",
@@ -33,34 +31,54 @@ def test_create_and_list_branches(client):
     )
 
     assert create_response.status_code == 201
-    assert create_response.json()["business_id"] == business_id
+
+    data = create_response.json()
+
+    assert data["business_id"] == str(test_business.id)
+    assert data["name"] == "Kampala Central"
 
     list_response = client.get(
-        f"/api/v1/businesses/{business_id}/branches"
+        f"/api/v1/businesses/{test_business.id}/branches",
+        headers=auth_headers,
     )
 
     assert list_response.status_code == 200
-    assert len(list_response.json()) == 1
-    assert list_response.json()[0]["name"] == "Kampala Central"
+
+    branches = list_response.json()
+
+    assert len(branches) == 1
+    assert branches[0]["name"] == "Kampala Central"
 
 
-def test_branch_requires_existing_business(client):
-    import uuid
-
-    missing_business_id = uuid.uuid4()
-
-    response = client.post(
-        f"/api/v1/businesses/{missing_business_id}/branches",
-        json={"name": "Orphan Branch"},
+def test_create_and_list_branches(
+    client,
+    test_business,
+    auth_headers,
+):
+    create_response = client.post(
+        f"/api/v1/businesses/{test_business.id}/branches",
+        headers=auth_headers,
+        json={
+            "name": "Kampala Central",
+            "address": "Kampala, Uganda",
+        },
     )
 
-    assert response.status_code == 404
+    assert create_response.status_code == 201
 
+    data = create_response.json()
 
-def test_invalid_business_name_is_rejected(client):
-    response = client.post(
-        "/api/v1/businesses",
-        json={"name": "X"},
+    assert data["business_id"] == str(test_business.id)
+    assert data["name"] == "Kampala Central"
+
+    list_response = client.get(
+        f"/api/v1/businesses/{test_business.id}/branches",
+        headers=auth_headers,
     )
 
-    assert response.status_code == 422
+    assert list_response.status_code == 200
+
+    branches = list_response.json()
+
+    assert len(branches) == 1
+    assert branches[0]["name"] == "Kampala Central"

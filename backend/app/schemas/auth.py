@@ -1,16 +1,33 @@
-from pydantic import BaseModel, EmailStr, Field
+import uuid
+
+from pydantic import BaseModel, EmailStr,ConfigDict
+
+
+class UserRead(BaseModel):
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    email: EmailStr
+    first_name: str
+    last_name: str
+
+
+class BusinessContextRead(BaseModel):
+    id: uuid.UUID
+    name: str
+    role: str
+    permissions: list[str]
+
+
+class AuthContextRead(BaseModel):
+    user: UserRead
+    businesses: list[BusinessContextRead]
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8)
-
-
-class UserRead(BaseModel):
-    id: str
-    email: EmailStr
-    first_name: str
-    last_name: str
+    password: str
 
 
 class TokenResponse(BaseModel):

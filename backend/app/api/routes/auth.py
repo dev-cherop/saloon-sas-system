@@ -1,28 +1,60 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
 
 from app.core.security import create_access_token, verify_password
 from app.db import get_db
 from app.models.users import User
-from app.schemas.auth import LoginRequest, TokenResponse, UserRead
+from app.schemas.auth import LoginRequest, TokenResponse, UserRead,AuthContextRead,BusinessContextRead
 
 from app.core.auth import get_current_user
+
+from app.models.membership import BusinessMembership
+from app.models.roles import Role
 
 router = APIRouter(
     prefix="/api/v1/auth",
     tags=["Authentication"],
 )
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=AuthContextRead)
 def get_me(
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
-    return UserRead(
-        id=str(current_user.id),
-        email=current_user.email,
-        first_name=current_user.first_name,
-        last_name=current_user.last_name,
+    statement = (
+        select(BusinessMembership)
+        .where(
+            BusinessMembership.user_id == current_user.id
+        )
+        .options(
+            selectinload(BusinessMembership.business),
+            selectinload(
+                BusinessMembership.role
+            ).selectinload(Role.permissions),
+        )
+    )
+
+    memberships = db.scalars(statement).all()
+
+    businesses = [
+        BusinessContextRead(
+            id=membership.business.id,
+            name=membership.business.name,
+            role=membership.role.name,
+            permissions=sorted(
+                permission.code
+                for permission in membership.role.permissions
+            ),
+        )
+        for membership in memberships
+        if membership.business.is_active
+    ]
+
+    return AuthContextRead(
+        user=UserRead.model_validate(current_user),
+        businesses=businesses,
     )
 
 

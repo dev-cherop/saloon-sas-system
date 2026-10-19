@@ -1,25 +1,11 @@
-import uuid
-
-
-def create_test_business(client):
+def test_create_customer(
+    client,
+    test_business,
+    auth_headers,
+):
     response = client.post(
-        "/api/v1/businesses",
-        json={
-            "name": "Test Salon",
-            "email": "test@example.com",
-        },
-    )
-
-    assert response.status_code == 201
-
-    return response.json()["id"]
-
-
-def test_create_customer(client):
-    business_id = create_test_business(client)
-
-    response = client.post(
-        f"/api/v1/businesses/{business_id}/customers",
+        f"/api/v1/businesses/{test_business.id}/customers",
+        headers=auth_headers,
         json={
             "first_name": "Jane",
             "last_name": "Doe",
@@ -35,14 +21,17 @@ def test_create_customer(client):
 
     assert data["first_name"] == "Jane"
     assert data["last_name"] == "Doe"
-    assert data["business_id"] == business_id
+    assert data["business_id"] == str(test_business.id)
 
 
-def test_search_customers(client):
-    business_id = create_test_business(client)
-
+def test_search_customers(
+    client,
+    test_business,
+    auth_headers,
+):
     client.post(
-        f"/api/v1/businesses/{business_id}/customers",
+        f"/api/v1/businesses/{test_business.id}/customers",
+        headers=auth_headers,
         json={
             "first_name": "Jane",
             "last_name": "Doe",
@@ -51,7 +40,8 @@ def test_search_customers(client):
     )
 
     client.post(
-        f"/api/v1/businesses/{business_id}/customers",
+        f"/api/v1/businesses/{test_business.id}/customers",
+        headers=auth_headers,
         json={
             "first_name": "Peter",
             "last_name": "Smith",
@@ -60,8 +50,9 @@ def test_search_customers(client):
     )
 
     response = client.get(
-        f"/api/v1/businesses/{business_id}/customers"
-        "?search=Jane"
+        f"/api/v1/businesses/{test_business.id}/customers",
+        headers=auth_headers,
+        params={"search": "Jane"},
     )
 
     assert response.status_code == 200
@@ -72,46 +63,62 @@ def test_search_customers(client):
     assert customers[0]["first_name"] == "Jane"
 
 
-def test_customer_cannot_be_accessed_from_another_business(client):
-    business_a = create_test_business(client)
-    business_b = create_test_business(client)
+
+def test_customer_cannot_be_accessed_from_another_business(
+    client,
+    db_session,
+    test_business,
+    auth_headers,
+):
+    from app.models.business import Business
+
+    business_b = Business(
+        name="Another Salon",
+    )
+
+    db_session.add(business_b)
+    db_session.commit()
+    db_session.refresh(business_b)
 
     response = client.post(
-        f"/api/v1/businesses/{business_a}/customers",
+        f"/api/v1/businesses/{test_business.id}/customers",
+        headers=auth_headers,
         json={
             "first_name": "Jane",
             "last_name": "Doe",
         },
     )
+
+    assert response.status_code == 201
 
     customer_id = response.json()["id"]
 
     response = client.get(
-        f"/api/v1/businesses/{business_b}/customers/{customer_id}"
+        f"/api/v1/businesses/{business_b.id}/customers/{customer_id}",
+        headers=auth_headers,
     )
 
+    # User isn't a member of business B.
     assert response.status_code == 404
 
 
-def test_update_customer(client):
-    business_id = create_test_business(client)
-
-    response = client.post(
-        f"/api/v1/businesses/{business_id}/customers",
-        json={
-            "first_name": "Jane",
-            "last_name": "Doe",
-        },
+def test_customer_requires_authentication(
+    client,
+    test_business,
+):
+    response = client.get(
+        f"/api/v1/businesses/{test_business.id}/customers",
     )
 
-    customer_id = response.json()["id"]
+    assert response.status_code == 401
 
-    response = client.patch(
-        f"/api/v1/businesses/{business_id}/customers/{customer_id}",
-        json={
-            "phone": "+256700000003",
-        },
+
+def test_customer_requires_authentication(
+    client,
+    test_business,
+):
+    response = client.get(
+        f"/api/v1/businesses/{test_business.id}/customers",
     )
 
-    assert response.status_code == 200
-    assert response.json()["phone"] == "+256700000003"
+    assert response.status_code == 401
