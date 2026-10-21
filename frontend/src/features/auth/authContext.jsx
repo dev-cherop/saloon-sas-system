@@ -15,6 +15,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [businesses, setBusinesses] = useState([]);
+  const [systemPermissions, setSystemPermissions] = useState([]);
   const [activeBusiness, setActiveBusinessState] =
     useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
   function applyContext(context) {
     setUser(context.user);
     setBusinesses(context.businesses);
+    setSystemPermissions(context.system_permissions ?? []);
 
     setActiveBusinessState((previous) => {
       const stillAvailable = context.businesses.find(
@@ -64,6 +66,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("access_token");
     setUser(null);
     setBusinesses([]);
+    setSystemPermissions([]);
     setActiveBusinessState(null);
   }
 
@@ -95,6 +98,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         businesses,
+        systemPermissions,
         activeBusiness,
         selectBusiness,
         loading,

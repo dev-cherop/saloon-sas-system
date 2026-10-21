@@ -16,6 +16,7 @@ from app.models.membership import BusinessMembership
 
    
 from app.schemas.business import (
+    BusinessCreate,
     BusinessRead,
     BranchCreate,
     BranchRead,
@@ -26,6 +27,12 @@ from app.services.business import (
     create_branch,
     list_branches,
     update_branch,
+    create_business
+)
+
+from app.core.authorization import (
+    require_permission,
+    require_system_permission,
 )
 
 router = APIRouter(
@@ -33,6 +40,20 @@ router = APIRouter(
     tags=["Businesses"],
 )
 
+
+@router.post(
+    "",
+    response_model=BusinessRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_business_endpoint(
+    payload: BusinessCreate,
+    db: Session = Depends(get_db),
+    _system_user: User = Depends(
+        require_system_permission("system:businesses:create")
+    ),
+):
+    return create_business(db, payload)
 
 @router.get(
     "",

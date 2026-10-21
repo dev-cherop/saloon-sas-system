@@ -5,6 +5,7 @@ import {
 } from "react-router-dom";
 
 import DashboardLayout from "./layouts/DashboardLayout";
+import BusinessPage from "./features/businesses/BusinessPage";
 import CustomerPage from "./features/customers/CustomerPage";
 import LoginPage from "./features/auth/login";
 import LoyaltySettingsPage from "./features/loyalty/LoyalSettingsPage";
@@ -612,6 +613,10 @@ function AppLayout() {
           path="/"
           element={<DashboardPage />}
         />
+
+        <Route element={<PermissionRoute permission="settings:manage" />}>
+          <Route path="/settings" element={<BusinessPage />} />
+        </Route>
 
         <Route
           element={

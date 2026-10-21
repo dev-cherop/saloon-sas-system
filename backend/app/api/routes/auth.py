@@ -12,6 +12,7 @@ from app.core.auth import get_current_user
 
 from app.models.membership import BusinessMembership
 from app.models.roles import Role
+from app.models.system_permissions import SystemRole
 
 router = APIRouter(
     prefix="/api/v1/auth",
@@ -38,6 +39,22 @@ def get_me(
 
     memberships = db.scalars(statement).all()
 
+    system_statement = (
+        select(User)
+        .where(User.id == current_user.id)
+        .options(
+            selectinload(User.system_roles).selectinload(
+                SystemRole.permissions
+            )
+        )
+    )
+    user_with_system_roles = db.scalar(system_statement)
+    system_permissions = sorted({
+        permission.code
+        for role in user_with_system_roles.system_roles
+        for permission in role.permissions
+    }) if user_with_system_roles else []
+
     businesses = [
         BusinessContextRead(
             id=membership.business.id,
@@ -55,6 +72,7 @@ def get_me(
     return AuthContextRead(
         user=UserRead.model_validate(current_user),
         businesses=businesses,
+        system_permissions=system_permissions,
     )
 
 

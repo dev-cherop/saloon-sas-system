@@ -117,3 +117,80 @@ def test_update_branch_rejects_different_business(
     )
 
     assert response.status_code == 404
+
+
+def test_business_admin_cannot_create_business_without_system_permission(
+    client,
+    auth_headers,
+):
+    response = client.post(
+        "/api/v1/businesses",
+        headers=auth_headers,
+        json={
+            "name": "Unauthorized Salon",
+            "email": "unauthorized@example.com",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_system_permission_allows_business_creation(
+    client,
+    db_session,
+    admin_user,
+    auth_headers,
+):
+    from app.models.membership import BusinessMembership
+    from app.models.roles import Role
+    from app.models.system_permissions import SystemPermission, SystemRole
+    from app.models.users import User
+
+    permission = SystemPermission(
+        code="system:businesses:create",
+        description="Create businesses on the platform",
+    )
+    role = SystemRole(
+        name="Test System Administrator",
+        description="Test-only system role",
+        permissions=[permission],
+    )
+    db_session.add(role)
+    db_session.flush()
+    admin_user.system_roles.append(role)
+
+    salon_owner = User(
+        email="salon-owner@example.com",
+        password_hash="test-password-hash",
+        first_name="Salon",
+        last_name="Owner",
+        is_active=True,
+    )
+    business_admin_role = Role(
+        name="ADMIN",
+        description="Business administrator",
+    )
+    db_session.add_all([salon_owner, business_admin_role])
+    db_session.commit()
+    db_session.refresh(salon_owner)
+
+    response = client.post(
+        "/api/v1/businesses",
+        headers=auth_headers,
+        json={
+            "name": "New Salon",
+            "email": "new@example.com",
+            "admin_email": salon_owner.email,
+        },
+    )
+
+    assert response.status_code == 201, response.json()
+    assert response.json()["name"] == "New Salon"
+    assert response.json()["email"] == "new@example.com"
+
+    membership = db_session.query(BusinessMembership).filter_by(
+        user_id=salon_owner.id,
+    ).one()
+    assert str(membership.business_id) == response.json()["id"]
+    assert membership.role.name == "ADMIN"
+    assert salon_owner.system_roles == []

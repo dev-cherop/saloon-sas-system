@@ -23,6 +23,7 @@ class BusinessContextRead(BaseModel):
 class AuthContextRead(BaseModel):
     user: UserRead
     businesses: list[BusinessContextRead]
+    system_permissions: list[str] = []
 
 
 class LoginRequest(BaseModel):

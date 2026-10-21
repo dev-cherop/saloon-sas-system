@@ -47,3 +47,11 @@ DEFAULT_PERMISSIONS = [
         
 
 ]
+
+DEFAULT_SYSTEM_PERMISSIONS = [
+    ("system:businesses:create", "Create businesses on the platform"),
+    ("system:businesses:read", "View all platform businesses"),
+    ("system:businesses:manage", "Manage businesses across the platform"),
+    ("system:users:manage", "Manage users at the platform level"),
+    ("system:settings:manage", "Manage platform-wide settings"),
+]

@@ -5,7 +5,7 @@ from sqlalchemy import Boolean, DateTime, String, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
-
+from app.models.system_permissions import SystemRole, user_system_roles
 
 class User(Base):
     __tablename__ = "users"
@@ -53,4 +53,9 @@ class User(Base):
     memberships: Mapped[list["BusinessMembership"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+
+    system_roles: Mapped[list["SystemRole"]] = relationship(
+        secondary=user_system_roles,
+        lazy="selectin",
     )

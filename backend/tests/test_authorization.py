@@ -124,3 +124,48 @@ def test_receptionist_cannot_manage_business_settings(
     )
 
     assert response.status_code == 403
+
+def test_auth_context_returns_system_permissions(
+    client,
+    auth_headers,
+):
+    response = client.get(
+        "/api/v1/auth/me",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["system_permissions"] == []
+
+
+def test_auth_context_returns_assigned_system_permissions(
+    client,
+    auth_headers,
+    admin_user,
+    db_session,
+):
+    from app.models.system_permissions import (
+        SystemPermission,
+        SystemRole,
+    )
+
+    permission = SystemPermission(
+        code="system:businesses:create",
+        description="Create businesses on the platform",
+    )
+    role = SystemRole(
+        name=f"Test System Admin {uuid.uuid4()}",
+        permissions=[permission],
+    )
+    db_session.add(role)
+    db_session.flush()
+    admin_user.system_roles.append(role)
+    db_session.commit()
+
+    response = client.get(
+        "/api/v1/auth/me",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    assert "system:businesses:create" in response.json()["system_permissions"]
