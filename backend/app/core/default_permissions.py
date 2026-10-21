@@ -39,6 +39,11 @@ DEFAULT_PERMISSIONS = [
     ("appointments:create", "Create appointments"),
     ("appointments:update", "Update appointments"),
     ("appointments:delete", "Delete appointments"),
+
+    ("coupons:read", "View coupons"),
+    ("coupons:create", "Create coupons"),
+    ("coupons:update", "Update coupons"),
+    ("coupons:delete", "Delete coupons"),
         
 
 ]

@@ -12,6 +12,7 @@ import ExpensePage from "./features/expenses/ExpensePage";
 import PaymentsPage from "./payments/PaymentsPage";
 import ServicesPage from "./features/services/ServicesPage";
 import WorkersPage from "./features/workers/WorkersPage";
+import CouponsPage from "./features/coupons/CouponsPage";
 import AppointmentsPage from "./features/appointments/AppointmentsPage";
 
 import {
@@ -558,6 +559,20 @@ function WorkersRoute() {
 }
 
 
+function CouponsRoute() {
+  const { activeBusiness } = useAuth();
+
+  if (!activeBusiness) {
+    return (
+      <p className="text-slate-600">
+        No active business selected.
+      </p>
+    );
+  }
+
+  return <CouponsPage businessId={activeBusiness.id} />;
+}
+
 function AppointmentsRoute() {
   const { activeBusiness } = useAuth();
 
@@ -652,7 +667,14 @@ function AppLayout() {
 </Route>
 
 
-          <Route element={<PermissionRoute permission="reports:read" />}>
+          <Route element={<PermissionRoute permission="coupons:read" />}>
+  <Route
+    path="/coupons"
+    element={<CouponsRoute />}
+  />
+</Route>
+
+<Route element={<PermissionRoute permission="reports:read" />}>
   <Route
     path="/reports"
     element={<ReportsRoute />}

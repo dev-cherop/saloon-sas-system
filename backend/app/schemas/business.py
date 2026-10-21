@@ -27,6 +27,12 @@ class BranchCreate(BaseModel):
     address: str | None = Field(default=None, max_length=255)
 
 
+class BranchUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=150)
+    address: str | None = Field(default=None, max_length=255)
+    is_active: bool | None = None
+
+
 class BranchRead(BaseModel):
     id: uuid.UUID
     business_id: uuid.UUID

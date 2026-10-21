@@ -46,6 +46,12 @@ const navigation = [
   },
   
   {
+    label: "Coupons",
+    path: "/coupons",
+    permission: "coupons:read",
+  },
+
+  {
     label: "Reports",
     path: "/reports",
     permission: "reports:read",

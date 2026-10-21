@@ -32,4 +32,7 @@ __all__ = [
     "Service",
     "Worker",
     "Appointment",
+    "Coupon",
 ]
+
+from app.models.coupon import Coupon

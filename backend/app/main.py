@@ -10,6 +10,7 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.expenses import router as expenses_router
 from app.api.routes.loyalty import router as loyality_router
 from app.api.routes.payments import router as payments_router
+from app.api.routes.coupons import router as coupons_router
 from app.api.routes.services import router as services_router
 from app.api.routes.workers import router as workers_router
 from app.api.routes.appointments import router as appointments_router
@@ -39,6 +40,7 @@ app.include_router(customers_router)
 app.include_router(expenses_router)
 app.include_router(loyality_router)
 app.include_router(payments_router)
+app.include_router(coupons_router)
 app.include_router(services_router)
 app.include_router(workers_router)
 app.include_router(appointments_router)

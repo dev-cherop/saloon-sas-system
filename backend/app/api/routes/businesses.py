@@ -19,11 +19,13 @@ from app.schemas.business import (
     BusinessRead,
     BranchCreate,
     BranchRead,
+    BranchUpdate,
 )
 from app.services.business import (
     get_business,
     create_branch,
     list_branches,
+    update_branch,
 )
 
 router = APIRouter(
@@ -100,6 +102,28 @@ def create_branch_endpoint(
         raise HTTPException(
             status_code=404,
             detail="Business not found or inactive",
+        )
+
+    return branch
+
+
+@router.patch(
+    "/{business_id}/branches/{branch_id}",
+    response_model=BranchRead,
+)
+def update_branch_endpoint(
+    business_id: uuid.UUID,
+    branch_id: uuid.UUID,
+    payload: BranchUpdate,
+    db: Session = Depends(get_db),
+    _membership=Depends(require_permission("settings:manage")),
+):
+    branch = update_branch(db, business_id, branch_id, payload)
+
+    if branch is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Branch not found",
         )
 
     return branch

@@ -180,6 +180,12 @@ def admin_user(db_session, test_business):
     Permission(code="appointments:create", description="Create appointments"),
     Permission(code="appointments:update", description="Update appointments"),
     Permission(code="appointments:delete", description="Delete appointments"),
+
+    Permission(code="coupons:read", description="View coupons"),
+    Permission(code="coupons:create", description="Create coupons"),
+    Permission(code="coupons:update", description="Update coupons"),
+    Permission(code="coupons:delete", description="Delete coupons"),
+
 ]
 
     db_session.add_all(permissions)
