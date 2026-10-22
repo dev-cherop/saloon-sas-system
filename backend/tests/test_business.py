@@ -194,3 +194,23 @@ def test_system_permission_allows_business_creation(
     assert str(membership.business_id) == response.json()["id"]
     assert membership.role.name == "ADMIN"
     assert salon_owner.system_roles == []
+
+
+def test_business_settings_rejects_user_from_another_business(
+    client,
+    db_session,
+    test_business,
+    auth_headers,
+):
+    other_business = Business(name="Other Salon")
+    db_session.add(other_business)
+    db_session.commit()
+    db_session.refresh(other_business)
+
+    response = client.get(
+        f"/api/v1/businesses/{other_business.id}",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Business not found"

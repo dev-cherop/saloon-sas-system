@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.coupon import Coupon
@@ -38,6 +39,23 @@ def update_coupon(db: Session, business_id, coupon_id, **updates):
 
     if coupon is None:
         return None
+
+    discount_type = updates.get("discount_type", coupon.discount_type)
+    discount_value = updates.get("discount_value", coupon.discount_value)
+    starts_at = updates.get("starts_at", coupon.starts_at)
+    expires_at = updates.get("expires_at", coupon.expires_at)
+
+    if discount_type == "percentage" and discount_value > 100:
+        raise HTTPException(
+            status_code=422,
+            detail="Percentage discount cannot exceed 100",
+        )
+
+    if starts_at and expires_at and expires_at <= starts_at:
+        raise HTTPException(
+            status_code=422,
+            detail="Expiry must be later than the start date",
+        )
 
     for field, value in updates.items():
         if field == "code" and value is not None:

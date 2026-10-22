@@ -190,3 +190,27 @@ def test_coupon_read_requires_permission(
     )
 
     assert response.status_code == 403, response.text
+
+
+def test_update_coupon_rejects_percentage_over_100(
+    client, test_business, auth_headers
+):
+    url = BASE_URL.format(business_id=test_business.id)
+    created = client.post(
+        url,
+        headers=auth_headers,
+        json=coupon_payload(
+            code="FIXED150",
+            discount_type="fixed",
+            discount_value="150.00",
+        ),
+    )
+    assert created.status_code == 201, created.text
+
+    response = client.patch(
+        f"{url}/{created.json()['id']}",
+        headers=auth_headers,
+        json={"discount_type": "percentage"},
+    )
+
+    assert response.status_code == 422, response.text
