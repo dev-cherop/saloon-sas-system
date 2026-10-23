@@ -15,6 +15,7 @@ import ServicesPage from "./features/services/ServicesPage";
 import WorkersPage from "./features/workers/WorkersPage";
 import CouponsPage from "./features/coupons/CouponsPage";
 import AppointmentsPage from "./features/appointments/AppointmentsPage";
+import CheckoutPage from "./features/checkout/CheckoutPage";
 
 import {
   AuthProvider,
@@ -590,6 +591,21 @@ function AppointmentsRoute() {
   );
 }
 
+
+function CheckoutRoute() {
+  const { activeBusiness } = useAuth();
+
+  if (!activeBusiness) {
+    return (
+      <p className="text-slate-600">
+        No active business selected.
+      </p>
+    );
+  }
+
+  return <CheckoutPage businessId={activeBusiness.id} />;
+}
+
 function ReportsRoute() {
   const { activeBusiness } = useAuth();
 
@@ -677,6 +693,10 @@ function AppLayout() {
     path="/coupons"
     element={<CouponsRoute />}
   />
+</Route>
+
+<Route element={<PermissionRoute permission="checkout:read" />}>
+  <Route path="/checkout" element={<CheckoutRoute />} />
 </Route>
 
 <Route element={<PermissionRoute permission="reports:read" />}>

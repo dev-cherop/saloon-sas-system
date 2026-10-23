@@ -27,6 +27,11 @@ const navigation = [
     path: "/payments",
     permission: "payments:read",
   },
+  {
+    label: "Checkout",
+    path: "/checkout",
+    permission: "checkout:read",
+  },
 
   {
     label: "Services",
