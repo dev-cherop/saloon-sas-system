@@ -49,6 +49,14 @@ class LoyaltyTransaction(Base):
         index=True,
     )
 
+    sale_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("sales.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
     # Positive points are earned; negative points are redeemed.
     points_change = Column(Integer, nullable=False)
 

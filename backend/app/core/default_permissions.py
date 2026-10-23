@@ -44,6 +44,9 @@ DEFAULT_PERMISSIONS = [
     ("coupons:create", "Create coupons"),
     ("coupons:update", "Update coupons"),
     ("coupons:delete", "Delete coupons"),
+
+        ("checkout:read", "View checkout sales"),
+    ("checkout:create", "Create checkout sales"),
         
 
 ]

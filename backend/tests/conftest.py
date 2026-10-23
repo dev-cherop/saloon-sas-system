@@ -169,6 +169,8 @@ def admin_user(db_session, test_business):
             code="payments:create",
             description="Record customer payments",
         ),
+            Permission(code="checkout:read", description="View checkout sales"),
+    Permission(code="checkout:create", description="Create checkout sales"),
 
         Permission(
     code="loyalty:manage",

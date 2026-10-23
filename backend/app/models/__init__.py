@@ -32,7 +32,11 @@ __all__ = [
     "Service",
     "Worker",
     "Appointment",
+    "Sale",
+    "SaleItem",
     "Coupon",
 ]
 
 from app.models.coupon import Coupon
+
+from app.models.sale import Sale, SaleItem

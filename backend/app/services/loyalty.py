@@ -243,3 +243,69 @@ def award_points_for_visit(
     db.flush()
 
     return transaction
+
+
+def award_points_for_sale(
+    db: Session,
+    business_id: UUID,
+    sale_id: UUID,
+) -> LoyaltyTransaction | None:
+    from app.models.sale import Sale
+
+    sale = (
+        db.query(Sale)
+        .filter(
+            Sale.id == sale_id,
+            Sale.business_id == business_id,
+        )
+        .with_for_update()
+        .first()
+    )
+
+    if sale is None:
+        raise ValueError("Sale not found in this business.")
+
+    if sale.status != "paid":
+        raise ValueError("Loyalty points can only be awarded for paid sales.")
+
+    if sale.customer_id is None:
+        return None
+
+    existing = (
+        db.query(LoyaltyTransaction)
+        .filter(LoyaltyTransaction.sale_id == sale.id)
+        .first()
+    )
+    if existing is not None:
+        return existing
+
+    settings = (
+        db.query(LoyaltySettings)
+        .filter(LoyaltySettings.business_id == business_id)
+        .first()
+    )
+    if settings is None or not settings.enabled:
+        return None
+
+    amount = Decimal(str(sale.total_amount))
+    spend_per_point = Decimal(str(settings.spend_per_point))
+
+    if amount <= 0 or spend_per_point <= 0:
+        return None
+
+    points = int(amount // spend_per_point)
+    if points <= 0:
+        return None
+
+    transaction = LoyaltyTransaction(
+        business_id=business_id,
+        customer_id=sale.customer_id,
+        sale_id=sale.id,
+        points_change=points,
+        transaction_type="earned",
+        monetary_value=Decimal("0.00"),
+        description=f"Loyalty points earned from sale {sale.id}",
+    )
+    db.add(transaction)
+    db.flush()
+    return transaction

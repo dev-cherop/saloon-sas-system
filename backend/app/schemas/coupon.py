@@ -15,6 +15,7 @@ class CouponCreate(BaseModel):
     expires_at: datetime | None = None
     usage_limit: int | None = Field(default=None, gt=0)
     is_active: bool = True
+    service_ids: list[UUID] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_coupon(self):
@@ -41,6 +42,7 @@ class CouponUpdate(BaseModel):
     expires_at: datetime | None = None
     usage_limit: int | None = Field(default=None, gt=0)
     is_active: bool | None = None
+    service_ids: list[UUID] | None = None
 
     @model_validator(mode="after")
     def validate_coupon(self):

@@ -3,7 +3,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-
+from fastapi import HTTPException
 from app.core.authorization import require_permission
 from app.db import get_db
 from app.schemas.payment import PaymentCreate, PaymentRead
@@ -26,12 +26,18 @@ def create_payment_endpoint(
     db: Session = Depends(get_db),
     _membership=Depends(require_permission("payments:create")),
 ):
-    payment = create_payment(db, business_id, payload)
+    try:
+        payment = create_payment(db, business_id, payload)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
 
     if payment is None:
         raise HTTPException(
             status_code=404,
-            detail="Customer visit not found in this business",
+            detail="Customer visit or sale not found in this business",
         )
 
     return payment
@@ -41,6 +47,7 @@ def create_payment_endpoint(
 def list_payments_endpoint(
     business_id: uuid.UUID,
     visit_id: uuid.UUID | None = None,
+    sale_id: uuid.UUID | None = None,
     start_date: date | None = None,
     end_date: date | None = None,
     db: Session = Depends(get_db),
@@ -56,6 +63,7 @@ def list_payments_endpoint(
         db,
         business_id,
         visit_id=visit_id,
+        sale_id=sale_id,
         start_date=start_date,
         end_date=end_date,
     )

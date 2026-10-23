@@ -36,7 +36,14 @@ class Payment(Base):
     visit_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("customer_visits.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+        index=True,
+    )
+
+    sale_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("sales.id", ondelete="CASCADE"),
+        nullable=True,
         index=True,
     )
 

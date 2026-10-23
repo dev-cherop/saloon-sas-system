@@ -35,10 +35,17 @@ def get_coupon(db: Session, business_id, coupon_id):
 
 
 def update_coupon(db: Session, business_id, coupon_id, **updates):
+    from sqlalchemy import select
+
+    from app.models.coupon import coupon_services
+    from app.models.service import Service
+
     coupon = get_coupon(db, business_id, coupon_id)
 
     if coupon is None:
         return None
+
+    service_ids = updates.pop("service_ids", None)
 
     discount_type = updates.get("discount_type", coupon.discount_type)
     discount_value = updates.get("discount_value", coupon.discount_value)
@@ -57,14 +64,55 @@ def update_coupon(db: Session, business_id, coupon_id, **updates):
             detail="Expiry must be later than the start date",
         )
 
-    for field, value in updates.items():
-        if field == "code" and value is not None:
-            value = value.strip().upper()
-        setattr(coupon, field, value)
+    if service_ids is not None:
+        service_ids = set(service_ids)
 
-    db.commit()
-    db.refresh(coupon)
-    return coupon
+        if service_ids:
+            valid_service_ids = set(
+                db.scalars(
+                    select(Service.id).where(
+                        Service.business_id == business_id,
+                        Service.id.in_(service_ids),
+                    )
+                ).all()
+            )
+
+            if valid_service_ids != service_ids:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "One or more services were not found "
+                        "in this business."
+                    ),
+                )
+
+    try:
+        for field, value in updates.items():
+            if field == "code" and value is not None:
+                value = value.strip().upper()
+            setattr(coupon, field, value)
+
+        if service_ids is not None:
+            db.execute(
+                coupon_services.delete().where(
+                    coupon_services.c.coupon_id == coupon.id
+                )
+            )
+
+            for service_id in service_ids:
+                db.execute(
+                    coupon_services.insert().values(
+                        coupon_id=coupon.id,
+                        service_id=service_id,
+                    )
+                )
+
+        db.commit()
+        db.refresh(coupon)
+        return coupon
+    except Exception:
+        db.rollback()
+        raise
 
 
 def delete_coupon(db: Session, business_id, coupon_id):
@@ -76,3 +124,50 @@ def delete_coupon(db: Session, business_id, coupon_id):
     db.delete(coupon)
     db.commit()
     return True
+
+
+def create_coupon(db: Session, business_id, **data):
+    from sqlalchemy import select
+
+    from app.models.coupon import coupon_services
+    from app.models.service import Service
+
+    data["code"] = data["code"].strip().upper()
+    service_ids = set(data.pop("service_ids", []))
+
+    if service_ids:
+        valid_service_ids = set(
+            db.scalars(
+                select(Service.id).where(
+                    Service.business_id == business_id,
+                    Service.id.in_(service_ids),
+                )
+            ).all()
+        )
+
+        if valid_service_ids != service_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="One or more services were not found in this business.",
+            )
+
+    coupon = Coupon(business_id=business_id, **data)
+    db.add(coupon)
+
+    try:
+        db.flush()
+
+        for service_id in service_ids:
+            db.execute(
+                coupon_services.insert().values(
+                    coupon_id=coupon.id,
+                    service_id=service_id,
+                )
+            )
+
+        db.commit()
+        db.refresh(coupon)
+        return coupon
+    except Exception:
+        db.rollback()
+        raise
