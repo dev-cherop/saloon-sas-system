@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { getCustomers } from "../../services/customerApi";
 import { getServices } from "../../services/serviceApi";
-import { createCheckout } from "../../services/checkoutApi";
+import { createCheckout, getSale } from "../../services/checkoutApi";
+import { createPayment, getPayments } from "../../services/paymentApi";
 
 const initialForm = {
   customer_id: "",
@@ -24,6 +25,14 @@ export default function CheckoutPage({ businessId }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [paidAmount, setPaidAmount] = useState(0);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +141,13 @@ export default function CheckoutPage({ businessId }) {
       });
 
       setSale(createdSale);
+      setPaidAmount(0);
+      setPaymentAmount(String(Number(createdSale.total_amount || 0)));
+      setPaymentMethod("cash");
+      setPaymentReference("");
+      setPaymentNotes("");
+      setPaymentError("");
+      setPaymentSuccess("");
       setSuccess("Sale created successfully.");
       setForm(initialForm);
       setQuantities({});
@@ -144,6 +160,75 @@ export default function CheckoutPage({ businessId }) {
       );
     } finally {
       setSaving(false);
+    }
+  };
+
+  const outstandingBalance = Math.max(
+    0,
+    Number(sale?.total_amount || 0) - paidAmount
+  );
+
+  const handlePaymentSubmit = async (event) => {
+    event.preventDefault();
+    setPaymentError("");
+    setPaymentSuccess("");
+
+    const amount = Number(paymentAmount);
+
+    if (!sale || !Number.isFinite(amount) || amount <= 0) {
+      setPaymentError("Enter a payment amount greater than zero.");
+      return;
+    }
+
+    if (amount > outstandingBalance + 0.000001) {
+      setPaymentError("Payment cannot exceed the outstanding balance.");
+      return;
+    }
+
+    setPaymentSaving(true);
+
+    try {
+      await createPayment(businessId, {
+        sale_id: sale.id,
+        amount,
+        payment_method: paymentMethod,
+        reference: paymentReference.trim() || null,
+        notes: paymentNotes.trim() || null,
+      });
+
+      const [updatedSale, paymentsResponse] = await Promise.all([
+        getSale(businessId, sale.id),
+        getPayments(businessId, { sale_id: sale.id }),
+      ]);
+
+      const updatedPaidAmount = paymentsResponse.data.reduce(
+        (total, payment) => total + Number(payment.amount || 0),
+        0
+      );
+      const remaining = Math.max(
+        0,
+        Number(updatedSale.total_amount || 0) - updatedPaidAmount
+      );
+
+      setSale(updatedSale);
+      setPaidAmount(updatedPaidAmount);
+      setPaymentAmount(String(remaining));
+      setPaymentReference("");
+      setPaymentNotes("");
+      setPaymentSuccess(
+        remaining <= 0.000001
+          ? "Payment recorded. The sale is fully paid."
+          : "Payment recorded successfully."
+      );
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      setPaymentError(
+        Array.isArray(detail)
+          ? detail.map((item) => item.msg || item.message || "").filter(Boolean).join(", ")
+          : detail || "Unable to record the payment. Please check the payment history before retrying."
+      );
+    } finally {
+      setPaymentSaving(false);
     }
   };
 
@@ -369,9 +454,111 @@ export default function CheckoutPage({ businessId }) {
           <p className="mt-3 text-sm text-slate-600">
             Status: <span className="font-medium capitalize">{sale.status.replaceAll("_", " ")}</span>
           </p>
-          <p className="mt-1 text-sm text-slate-500">
-            This creates the sale only; record its payment separately in Payments.
-          </p>
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-sm text-slate-500">Amount paid</p>
+              <p className="mt-1 text-lg font-semibold">{money(paidAmount)}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-sm text-slate-500">Outstanding balance</p>
+              <p className="mt-1 text-lg font-semibold">{money(outstandingBalance)}</p>
+            </div>
+          </div>
+
+          {paymentSuccess && (
+            <div role="status" className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+              {paymentSuccess}
+            </div>
+          )}
+
+          {paymentError && (
+            <div role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {paymentError}
+            </div>
+          )}
+
+          {outstandingBalance > 0.000001 &&
+            !["paid", "cancelled"].includes(String(sale.status).toLowerCase()) && (
+              <form onSubmit={handlePaymentSubmit} className="mt-6 space-y-4 border-t border-slate-200 pt-5">
+                <h3 className="text-base font-semibold text-slate-900">Record payment</h3>
+                <p className="text-sm text-slate-500">
+                  Record the full balance or enter a smaller amount for a partial payment.
+                </p>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="checkout-payment-amount" className="mb-1 block text-sm font-medium text-slate-700">
+                      Amount (UGX)
+                    </label>
+                    <input
+                      id="checkout-payment-amount"
+                      type="number"
+                      min="0.01"
+                      max={outstandingBalance}
+                      step="0.01"
+                      required
+                      value={paymentAmount}
+                      onChange={(event) => setPaymentAmount(event.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Maximum: {money(outstandingBalance)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="checkout-payment-method" className="mb-1 block text-sm font-medium text-slate-700">
+                      Payment method
+                    </label>
+                    <select
+                      id="checkout-payment-method"
+                      value={paymentMethod}
+                      onChange={(event) => setPaymentMethod(event.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="mobile_money">Mobile money</option>
+                      <option value="card">Card</option>
+                      <option value="bank_transfer">Bank transfer</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="checkout-payment-reference" className="mb-1 block text-sm font-medium text-slate-700">
+                      Reference (optional)
+                    </label>
+                    <input
+                      id="checkout-payment-reference"
+                      value={paymentReference}
+                      onChange={(event) => setPaymentReference(event.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="Transaction reference"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="checkout-payment-notes" className="mb-1 block text-sm font-medium text-slate-700">
+                      Payment notes (optional)
+                    </label>
+                    <input
+                      id="checkout-payment-notes"
+                      value={paymentNotes}
+                      onChange={(event) => setPaymentNotes(event.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="Additional details"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={paymentSaving}
+                  className="rounded-lg bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {paymentSaving ? "Recording payment…" : "Record payment"}
+                </button>
+              </form>
+            )}
         </section>
       )}
     </div>
