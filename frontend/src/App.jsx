@@ -13,6 +13,7 @@ import ExpensePage from "./features/expenses/ExpensePage";
 import PaymentsPage from "./payments/PaymentsPage";
 import ServicesPage from "./features/services/ServicesPage";
 import WorkersPage from "./features/workers/WorkersPage";
+import PayrollPage from "./features/payroll/PayrollPage";
 import CouponsPage from "./features/coupons/CouponsPage";
 import AppointmentsPage from "./features/appointments/AppointmentsPage";
 import CheckoutPage from "./features/checkout/CheckoutPage";
@@ -560,6 +561,20 @@ function WorkersRoute() {
   return <WorkersPage businessId={activeBusiness.id} />;
 }
 
+function PayrollRoute() {
+  const { activeBusiness } = useAuth();
+
+  if (!activeBusiness) {
+    return (
+      <p className="text-slate-600">
+        No active business selected.
+      </p>
+    );
+  }
+
+  return <PayrollPage businessId={activeBusiness.id} />;
+}
+
 
 function CouponsRoute() {
   const { activeBusiness } = useAuth();
@@ -677,6 +692,13 @@ function AppLayout() {
   <Route
     path="/workers"
     element={<WorkersRoute />}
+  />
+</Route>
+
+<Route element={<PermissionRoute permission="payroll:read" />}>
+  <Route
+    path="/payroll"
+    element={<PayrollRoute />}
   />
 </Route>
 

@@ -45,8 +45,13 @@ DEFAULT_PERMISSIONS = [
     ("coupons:update", "Update coupons"),
     ("coupons:delete", "Delete coupons"),
 
-        ("checkout:read", "View checkout sales"),
+    ("checkout:read", "View checkout sales"),
     ("checkout:create", "Create checkout sales"),
+
+    ("payroll:read", "View worker payroll records"),
+    ("payroll:create", "Create worker payroll records"),
+    ("payroll:update", "Edit draft payroll records"),
+    ("payroll:approve", "Approve and process payroll"),
         
 
 ]

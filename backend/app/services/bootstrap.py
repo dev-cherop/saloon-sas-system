@@ -31,12 +31,17 @@ DEFAULT_ROLES = {
         "expenses:update",
         "payments:read",
         "payments:create",
+        "payroll:read",
+        "payroll:create",
+        "payroll:update",
+
     ],
     "RECEPTIONIST": [
         "customers:read",
         "customers:create",
         "customers:update",
         "services:read",
+        
     ],
 }
 

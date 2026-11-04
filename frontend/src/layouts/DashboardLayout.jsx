@@ -43,6 +43,11 @@ const navigation = [
     path: "/workers",
     permission: "workers:read",
   },
+  {
+    label: "Payroll",
+    path: "/payroll",
+    permission: "payroll:read",
+  },
 
     {
     label: "Appointments",

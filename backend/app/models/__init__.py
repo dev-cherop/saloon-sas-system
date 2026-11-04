@@ -11,8 +11,7 @@ from app.models.expense import Expense
 from app.models.payment import Payment
 from app.models.service import Service
 from app.models.worker import Worker
-
-
+from app.models.payroll import Payroll
 from app.models.appointment import Appointment
 
 
@@ -35,6 +34,7 @@ __all__ = [
     "Sale",
     "SaleItem",
     "Coupon",
+    "Payroll",
 ]
 
 from app.models.coupon import Coupon

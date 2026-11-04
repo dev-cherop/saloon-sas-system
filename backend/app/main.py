@@ -17,6 +17,7 @@ from app.api.routes.appointments import router as appointments_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.checkout import router as checkout_router
 from app.db import get_db
+from app.api.routes.payroll import router as payroll_router
 
 app = FastAPI(
     title="Salon Management API",
@@ -46,6 +47,7 @@ app.include_router(workers_router)
 app.include_router(appointments_router)
 app.include_router(reports_router)
 app.include_router(checkout_router)
+app.include_router(payroll_router)
 
 
 
